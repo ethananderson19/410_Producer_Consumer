@@ -18,8 +18,6 @@ using namespace std;
 mutex m;				//mutual exclusion
 condition_variable cv; 	//for signaling
 
-bool bProducedOne = false;	
-bool bConsumedOne = false;	
 bool bDone = false;			//used by producer to indicate we are done
 int gCount = 0;
 
@@ -32,8 +30,6 @@ void producer(int numbcounts) {
 			//produce something
 			gCount++;
 			cout << "Produced one, gCount=" << gCount << endl;
-	
-			bProducedOne = true;	//indicate one is ready
 		}
 		
 		//tell consumer to consume (one way comms from producer to consumer)
@@ -57,8 +53,11 @@ void consumer(int id) {
 		unique_lock<mutex> lck(m);
 
 		//has producer produced or is finished?
-		while (!bProducedOne && !bDone)
+		while (gCount==0 && !bDone)
+		{
+			cout << "   Consumer: " << id<<" waiting......." << endl;
 			cv.wait(lck);
+		}
 
 		//any work to do?
 		if (gCount>0){
@@ -82,13 +81,13 @@ int main() {
 
 	thread t_producer(producer, 1000);
 	thread t_consumer1(consumer, 1);
-//	thread t_consumer2(consumer, 2);
+	thread t_consumer2(consumer, 2);
 //	thread t_consumer3(consumer, 3);
 //	thread t_consumer4(consumer, 4);
 
 	t_producer.join();
 	t_consumer1.join();
-//	t_consumer2.join();
+	t_consumer2.join();
 //	t_consumer3.join();
 //	t_consumer4.join();
 
